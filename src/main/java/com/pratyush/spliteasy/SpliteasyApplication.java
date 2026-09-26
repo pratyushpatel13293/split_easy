@@ -7,7 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SpliteasyApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SpliteasyApplication.class, args);
+
+        SpringApplication.run(SpliteasyApplication.class, args);
 	}
 
 }
