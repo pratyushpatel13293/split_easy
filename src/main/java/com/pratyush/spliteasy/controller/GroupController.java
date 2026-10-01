@@ -1,14 +1,13 @@
 package com.pratyush.spliteasy.controller;
 
+import com.pratyush.spliteasy.dto.AddMemberRequest;
 import com.pratyush.spliteasy.dto.CreateGroupRequest;
+import com.pratyush.spliteasy.dto.GroupDetailsResponse;
 import com.pratyush.spliteasy.dto.GroupResponse;
 import com.pratyush.spliteasy.service.GroupService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class GroupController {
@@ -24,4 +23,10 @@ public class GroupController {
         return groupService.createGroup(request);
 
     }
+
+    @PostMapping("/groups/{id}/members")
+    public GroupDetailsResponse addMember(@PathVariable Long id, @Valid @RequestBody AddMemberRequest request) {
+        return groupService.addMember(id, request);
+    }
+
 }
