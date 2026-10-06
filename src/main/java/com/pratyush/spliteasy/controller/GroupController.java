@@ -28,6 +28,4 @@ public class GroupController {
     public GroupDetailsResponse addMember(@PathVariable Long id, @Valid @RequestBody AddMemberRequest request) {
         return groupService.addMember(id, request);
     }
-
-
 }
