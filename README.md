@@ -141,24 +141,23 @@ All errors are handled by one `@ControllerAdvice` and return:
 
 ## Key Design Decisions
 
-- **BigDecimal for money** —
-double stores numbers in binary, so values like 0.1 can’t be stored exactly (0.1 + 0.2 = 0.30000000000000004). BigDecimal stores exact decimal digits and lets me control rounding explicitly.
-- **Rounding rule** (₹100 split 3 ways) —
-Each share is rounded down to 2 decimals; the leftover paise go to the payer. ₹100 / 3 → 33.33, 33.33, and 33.34 for the payer, so shares always add up to exactly the amount.
-- **@Transactional on add expense** —
-Saving an expense and its splits is one @Transactional unit: if any split fails, the expense is rolled back too, so no half-saved data.
-- **DTOs, not entities, in responses** —
-Controllers return DTOs, not entities, so internal fields aren’t exposed and the API shape doesn’t change when the database model changes.
-- **409 on duplicates** (Java check + DB unique constraint) —
-existsByEmail gives a friendly 409 message. But two simultaneous requests can both pass that check (a race condition), so the DB unique constraint is the real guarantee; its DataIntegrityViolationException is mapped to 409 instead of 500.
-- **Balances algorithm** —
-One pass with a HashMap<userId, BigDecimal>: every member starts at 0, the payer gets +amount, each split’s user gets −share. Thanks to the rounding rule, balances always sum to 0.
-- **Settlements: greedy with two max-heaps** — (include the limitation: at most n−1 payments, not always the minimum)
-Two max-heaps (debtors stored as positive amounts). The largest debtor pays the largest creditor min(debt, credit); any leftover goes back into its heap. O(n log n), at most n−1 payments. Not always the minimum: +6, +5, −5, −3, −3 gives 4 payments, but 3 are possible.
-- **Pagination** (stable sort, no splits in the list) —
-Returns one page at a time instead of every expense. Sorted by createdAt DESC with id as a tie-breaker, so pages are stable. The list DTO has no splits, and page/size are validated (400 on bad values).
-- **N+1 fix** (`@ManyToOne` LAZY, 5 → 3 queries) —
-@ManyToOne is EAGER by default, so listing expenses fired one extra users query per payer. I made it LAZY: Hibernate uses a proxy, getId() reads the id with no SQL, and queries went from 5 → 3.
+- **BigDecimal for money** — `double` stores numbers in binary, so values like 0.1 can't be stored exactly (`0.1 + 0.2 = 0.30000000000000004`). `BigDecimal` stores exact decimal digits and lets me control rounding explicitly.
+
+- **Rounding rule** (₹100 split 3 ways) — Each share is rounded down to 2 decimals; the leftover paise go to the payer. ₹100 / 3 → 33.33, 33.33, and 33.34 for the payer, so shares always add up to exactly the amount.
+
+- **`@Transactional` on add expense** — Saving an expense and its splits is one `@Transactional` unit: if any split fails, the expense is rolled back too, so no half-saved data.
+
+- **DTOs, not entities, in responses** — Controllers return DTOs, not entities, so internal fields aren't exposed and the API shape doesn't change when the database model changes.
+
+- **409 on duplicates** (Java check + DB unique constraint) — `existsByEmail` gives a friendly 409 message. But two simultaneous requests can both pass that check (a race condition), so the DB unique constraint is the real guarantee; its `DataIntegrityViolationException` is mapped to 409 instead of 500.
+
+- **Balances algorithm** — One pass with a `HashMap<userId, BigDecimal>`: every member starts at 0, the payer gets +amount, each split's user gets −share. Thanks to the rounding rule, balances always sum to 0.
+
+- **Settlements: greedy with two max-heaps** — Two max-heaps (debtors stored as positive amounts). The largest debtor pays the largest creditor `min(debt, credit)`; any leftover goes back into its heap. O(n log n), at most n−1 payments. Not always the minimum: +6, +5, −5, −3, −3 gives 4 payments, but 3 are possible.
+
+- **Pagination** (stable sort, no splits in the list) — Returns one page at a time instead of every expense. Sorted by `createdAt DESC` with `id` as a tie-breaker, so pages are stable. The list DTO has no splits, and `page`/`size` are validated (400 on bad values).
+
+- **N+1 fix** (`@ManyToOne` LAZY, 5 → 3 queries) — `@ManyToOne` is EAGER by default, so listing expenses fired one extra `users` query per payer. I made it LAZY: Hibernate uses a proxy, `getId()` reads the id with no SQL, and queries went from 5 → 3.
 
 ---
 
