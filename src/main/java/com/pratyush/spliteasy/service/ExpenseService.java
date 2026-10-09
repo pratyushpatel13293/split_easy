@@ -2,6 +2,7 @@ package com.pratyush.spliteasy.service;
 
 import com.pratyush.spliteasy.dto.CreateExpenseRequest;
 import com.pratyush.spliteasy.dto.ExpenseResponse;
+import com.pratyush.spliteasy.dto.ExpenseSummaryResponse;
 import com.pratyush.spliteasy.dto.SplitResponse;
 import com.pratyush.spliteasy.entity.Expense;
 import com.pratyush.spliteasy.entity.ExpenseGroup;
@@ -14,6 +15,10 @@ import com.pratyush.spliteasy.repository.ExpenseGroupRepository;
 import com.pratyush.spliteasy.repository.ExpenseRepository;
 import com.pratyush.spliteasy.repository.ExpenseSplitRepository;
 import com.pratyush.spliteasy.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,6 +100,36 @@ public class ExpenseService {
 
         // 7b. Build and return the response
         return new ExpenseResponse( savedExpense.getId(), savedExpense.getDescription(), savedExpense.getAmount(),payer.getId(),savedExpense.getCreatedAt(),splitResponses);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ExpenseSummaryResponse> getExpenses(Long groupId, int page, int size) {
+
+        if(page<0){
+            throw new InvalidRequestException("page must be 0 or greater");
+        }
+        if(size<1 || size >50){
+            throw new InvalidRequestException("size must be between 1 and 50");
+
+        }
+
+        ExpenseGroup group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Group not found: " + groupId));
+
+
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+
+        Page<Expense> expenses = expenseRepository.findByGroup_Id(groupId, pageable);
+
+        return expenses.map(e -> new ExpenseSummaryResponse(
+                e.getId(),
+                e.getDescription(),
+                e.getAmount(),
+                e.getPaidBy().getId(),
+                e.getCreatedAt()));
+
+
     }
 
 }

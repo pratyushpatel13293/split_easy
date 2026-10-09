@@ -18,11 +18,11 @@ public class Expense {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
     private ExpenseGroup group;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paid_by", nullable = false)
     private User paidBy;
 
