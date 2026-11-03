@@ -7,10 +7,12 @@ import com.pratyush.spliteasy.exception.AlreadyMemberException;
 import com.pratyush.spliteasy.exception.ResourceNotFoundException;
 import com.pratyush.spliteasy.repository.ExpenseGroupRepository;
 import com.pratyush.spliteasy.repository.UserRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -58,4 +60,27 @@ public class GroupService {
 
     }
 
+    // Added for the demo UI. Sorted by id so the list order is stable.
+    public List<GroupResponse> getAllGroups() {
+        List<GroupResponse> result = new ArrayList<>();
+        for (ExpenseGroup group : expenseGroupRepository.findAll(Sort.by("id"))) {
+            result.add(new GroupResponse(group.getId(), group.getName()));
+        }
+        return result;
+    }
+
+    // Added for the demo UI. readOnly transaction because members is a lazy
+    // collection and open-in-view is off: it must be read while the session is open.
+    @Transactional(readOnly = true)
+    public GroupDetailsResponse getGroup(Long groupId) {
+        ExpenseGroup group = expenseGroupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Group not found: " + groupId));
+
+        List<UserResponse> members = new ArrayList<>();
+        for (User member : group.getMembers()) {
+            members.add(new UserResponse(member.getId(), member.getName(), member.getEmail()));
+        }
+        members.sort(Comparator.comparing(UserResponse::id));
+        return new GroupDetailsResponse(group.getId(), group.getName(), members);
+    }
 }

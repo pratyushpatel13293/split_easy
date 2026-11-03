@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class GroupController {
     private final GroupService groupService;
@@ -27,5 +29,17 @@ public class GroupController {
     @PostMapping("/groups/{id}/members")
     public GroupDetailsResponse addMember(@PathVariable Long id, @Valid @RequestBody AddMemberRequest request) {
         return groupService.addMember(id, request);
+    }
+
+    // Added for the demo UI: list all groups (id + name).
+    @GetMapping("/groups")
+    public List<GroupResponse> getAllGroups() {
+        return groupService.getAllGroups();
+    }
+
+    // Added for the demo UI: one group with its members. 404 if missing.
+    @GetMapping("/groups/{id}")
+    public GroupDetailsResponse getGroup(@PathVariable Long id) {
+        return groupService.getGroup(id);
     }
 }
